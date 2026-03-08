@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Successful – CricketAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="blob blob-gold"></div>
+<div class="blob blob-green"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">🏏 <span>Cricket</span>AI</div>
+  <a href="/logout" class="nav-logout">Sign out</a>
+</nav>
+
+<!-- SUCCESS PAGE -->
+<main class="success-main">
+
+  <!-- DB saved indicator -->
+  <div class="db-saved">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </svg>
+    Email saved to Supabase PostgreSQL
+    <span class="db-tick">✓</span>
+  </div>
+
+  <!-- User card -->
+  <div class="success-card">
+
+    <div class="success-card-top">
+      {% if user.picture %}
+        <img src="{{ user.picture }}" class="user-avatar" alt="profile">
+      {% else %}
+        <div class="user-avatar-ph">👤</div>
+      {% endif %}
+      <div class="user-meta">
+        <div class="user-name">{{ user.name or 'User' }}</div>
+        <div class="user-email-tag">
+          <span class="online-dot"></span>
+          {{ user.email }}
+        </div>
+      </div>
+    </div>
+
+    <div class="success-card-body">
+      <div class="info-row">
+        <span class="info-key">Email</span>
+        <span class="info-val mono">{{ user.email }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Status</span>
+        <span class="info-val"><span class="badge-green">✓ Verified</span></span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Database</span>
+        <span class="info-val"><span class="badge-green">✓ Supabase</span></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Next step -->
+  <div class="next-step">
+    <div class="next-step-title">🎉 Login ho gaya!</div>
+    <p class="next-step-desc">Ab UPI se ₹9 pay karein aur apna World Cup AI Pack paayein.</p>
+    <a href="/" class="btn-home">← Wapas Jao</a>
+    <a href="/logout" class="btn-logout">Sign Out</a>
+  </div>
+
+</main>
+
+</body>
+</html>
