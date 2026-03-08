@@ -1,11 +1,16 @@
-from flask import Flask, redirect, url_for, session, render_template, request
+from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
-import psycopg2
 import os
-from config import DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
+import requests
+import traceback
+from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
+# ── Google Sheets Webhook URL ──────────────────────────────────
+# Render pe SHEETS_WEBHOOK_URL environment variable set karo
+SHEETS_WEBHOOK_URL = os.getenv("SHEETS_WEBHOOK_URL", "")
 
 # ── OAuth setup ────────────────────────────────────────────────
 oauth = OAuth(app)
@@ -18,24 +23,20 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# ── Database ───────────────────────────────────────────────────
-def get_conn():
-    return psycopg2.connect(DATABASE_URL, sslmode='require')
-
-def save_user(email, name=None, picture=None):
-    conn = get_conn()
-    cur  = conn.cursor()
-    cur.execute(
-        """INSERT INTO users (email, name, picture)
-           VALUES (%s, %s, %s)
-           ON CONFLICT (email) DO UPDATE SET
-               name    = EXCLUDED.name,
-               picture = EXCLUDED.picture""",
-        (email, name, picture)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+# ── Google Sheets mein email save karo ────────────────────────
+def save_to_sheets(email, name=""):
+    try:
+        if not SHEETS_WEBHOOK_URL:
+            print("[SHEETS] SHEETS_WEBHOOK_URL set nahi hai!")
+            return
+        response = requests.post(SHEETS_WEBHOOK_URL, json={
+            "email": email,
+            "name": name
+        })
+        print(f"[SHEETS] Saved: {email} | Status: {response.status_code}")
+    except Exception as e:
+        print(f"[SHEETS ERROR] {e}")
+        traceback.print_exc()
 
 # ── Routes ─────────────────────────────────────────────────────
 @app.route("/")
@@ -49,18 +50,24 @@ def login():
 
 @app.route("/authorize")
 def authorize():
-    token    = google.authorize_access_token()
-    userinfo = token.get('userinfo') or google.userinfo()
+    try:
+        token    = google.authorize_access_token()
+        userinfo = token.get('userinfo') or google.userinfo()
 
-    email   = userinfo.get("email")
-    name    = userinfo.get("name", "")
-    picture = userinfo.get("picture", "")
+        email   = userinfo.get("email", "")
+        name    = userinfo.get("name", "")
+        picture = userinfo.get("picture", "")
 
-    save_user(email, name, picture)
+        # Google Sheets mein save karo
+        save_to_sheets(email, name)
 
-    session['user'] = {'email': email, 'name': name, 'picture': picture}
+        session['user'] = {'email': email, 'name': name, 'picture': picture}
+        return redirect(url_for("success"))
 
-    return redirect(url_for("success"))
+    except Exception as e:
+        print(f"[AUTH ERROR] {e}")
+        traceback.print_exc()
+        return redirect(url_for("home"))
 
 @app.route("/success")
 def success():
